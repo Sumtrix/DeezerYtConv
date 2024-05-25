@@ -17,7 +17,7 @@ import soundfile as sf
 
 
 class TrackSelectionApp(QMainWindow):
-    def __init__(self):
+    def __init__(self): 
         super().__init__()
 
         self.dataframe = pd.DataFrame()
@@ -81,8 +81,9 @@ class TrackSelectionApp(QMainWindow):
 
 
     def add_tracks_to_list(self):
+        max_idx = len(self.dataframe)
         for index, row in self.dataframe.iterrows():
-            track_checkbox = QCheckBox(f'{row["title"]} - {row["artist"]["name"]}')
+            track_checkbox = QCheckBox(f'({abs(index-max_idx)}) {row["title"]} - {row["artist"]["name"]}')
             track_checkbox.setChecked(row['title'] in self.selected_tracks)
             track_checkbox.stateChanged.connect(lambda state, track=row['title']: self.track_selection_changed(track, state))
             self.scroll_layout.addWidget(track_checkbox)
@@ -148,99 +149,55 @@ class TrackSelectionApp(QMainWindow):
 # Example usage:
 # convert_mp4_to_wav('/path/to/your/folder')
 
-
     def download_selected_tracks(self):
         selected_dataframe = self.dataframe[self.dataframe['title'].isin(self.selected_tracks)]
         # For demonstration purposes, let's print the selected dataframe
         print("Selected Tracks:")
-                
-        try:
-            print(f"Download started - id {id}")
-            for index, track in selected_dataframe.iterrows():
-                print(track)
-                print("---")
-                print(track["title"], "\t", track["artist"]["name"])
+        # 12342264551
+        temp_folder = os.path.dirname(__file__)
+        already_existing_files = glob.glob(os.path.join(temp_folder, '*.wav'))
+        
+        print(f"Download started - id {id}")
+        for index, track in selected_dataframe.iterrows():
+            print(track)
+            print("---")
+            print(track["title"], "\t", track["artist"]["name"])
 
-                title = track["title"]
-                artist = track["artist"]["name"]
-
-                input = urllib.parse.urlencode({'search_query': title + ' by ' + artist})
-                #html = requests.get("https://www.youtube.com/results?search_query=" + s_k)
-                html = urllib.request.urlopen("http://www.youtube.com/results?" + input)
-                print("http://www.youtube.com/results?" + input)
-                video_ids = re.findall(r"watch\?v=(\S{11})", html.read().decode())
-                first_res_html = f"http://www.youtube.com/watch?v={video_ids[0]}"
-
-                print(first_res_html)
-
-                youtubeObject = YouTube(first_res_html)
-                youtubeObject = youtubeObject.streams.get_highest_resolution()
-                temp_folder = os.path.dirname(__file__)
-                print(temp_folder)
-                youtubeObject.download(temp_folder)
-
-
-            mp4_files = glob.glob(temp_folder + '*.mp4')
-            print(mp4_file)
-            for mp4_file in mp4_files:
-                # Define the output .wav file path
-                wav_file = mp4_file.replace('.mp4', '.wav')
-                video = VideoFileClip(mp4_file)
-                audio = video.audio
-                print(audio)
-                # Write the audio to a temporary .mp3 file (pydub requires this step)
-                temp_mp3_path = mp4_file.replace('.mp4', '.mp3')
-                audio.write_audiofile(temp_mp3_path)
-                
-                # Load the temporary .mp3 file with pydub
-                sound = AudioSegment.from_mp3(temp_mp3_path)
-                
-                # Export the sound to .wav format
-                sound.export(wav_file, format='wav')
-                
-                # Close the video and audio objects
-                audio.close()
-                video.close()
-                
-                # Delete the temporary .mp3 file and the original .mp4 file
-                os.remove(temp_mp3_path)
-                os.remove(mp4_file)
-                
-            print(f"Converted {len(mp4_files)} .mp4 files to .wav format and deleted the originals.")
-            # 12342264551
-        except Exception as e:
-            print(e)
-            sys.exit()
-
-
-
-        """
-            subprocess.run(['python', '-m', 'yt_dlp', first_res_html])
-
-        print("Converting to wav..")
-        print(librosa.util.find_files(os.getcwd(), ext=["webm", "mkv"], recurse=False))
-        ###
-        ### The following part is really not done well....it should not have to fo over every track in the playlist 
-        ### especiall when there is a selection happening beforehand
-        ###
-        for track in self.dataframe["tracks"]:
             title = track["title"]
             artist = track["artist"]["name"]
-            for webm_file in librosa.util.find_files(os.getcwd(), ext=["webm", "mkv"], recurse=False):
-                #print(webm_file)
-                print(title, "\t", webm_file)
-                if title in webm_file:
-                    subprocess.run(['ffmpeg', '-i', webm_file, f"{title} - {artist}.wav"])
 
-        print("Deleting webm files...")
-        for webm_file in librosa.util.find_files(os.getcwd(), ext="webm", recurse=False):
-            os.remove(webm_file)"""
+            input = urllib.parse.urlencode({'search_query': title + ' by ' + artist})
+            #html = requests.get("https://www.youtube.com/results?search_query=" + s_k)
+            html = urllib.request.urlopen("http://www.youtube.com/results?" + input)
+            print("http://www.youtube.com/results?" + input)
+            video_ids = re.findall(r"watch\?v=(\S{11})", html.read().decode())
+            first_res_html = f"http://www.youtube.com/watch?v={video_ids[0]}"
 
+            youtubeObject = YouTube(first_res_html)
+            youtubeObject = youtubeObject.streams.get_highest_resolution()
+            youtubeObject.download(temp_folder)
+            print(youtubeObject.title)
+
+        mp4_files = glob.glob(os.path.join(temp_folder, '*.mp4'))
+        print(mp4_files)
+        for mp4_file in mp4_files:
+            wav_file = mp4_file.replace('.mp4', '.wav')
+            video = VideoFileClip(mp4_file)
+            audio = video.audio
+            temp_mp3_path = mp4_file.replace('.mp4', '.mp3')
+            audio.write_audiofile(temp_mp3_path)
+            sound = AudioSegment.from_mp3(temp_mp3_path)
+            sound.export(wav_file, format='wav')
+            audio.close()
+            video.close()
+            
+            os.remove(temp_mp3_path)
+            os.remove(mp4_file)
+            
+        print(f"Converted {len(mp4_files)} .mp4 files to .wav format and deleted the originals.")
 
 
 if __name__ == "__main__":
-    # Sample dataframe
-
     df = pd.DataFrame()
 
     app = QApplication(sys.argv)
