@@ -73,9 +73,20 @@ class TrackSelectionApp(QMainWindow):
         self.scroll_area.setWidget(self.scroll_widget)
         self.layout.addWidget(self.scroll_area)
 
-        self.download_button = QPushButton("Download")
+        self.download_button = QPushButton("Download Selection")
         self.download_button.clicked.connect(self.download_selected_tracks)
         self.layout.addWidget(self.download_button)
+
+        # entering playlist id
+        self.yt_url_layout = QHBoxLayout()
+        self.url_label = QLabel("Youtube URL:")
+        self.yt_url_layout.addWidget(self.url_label)
+        self.url_line = QLineEdit(" ")
+        self.yt_url_layout.addWidget(self.url_line)
+        self.url_button = QPushButton("Downl. URL")
+        self.url_button.clicked.connect(self.download_url)
+        self.yt_url_layout.addWidget(self.url_button)
+        self.layout.addLayout(self.yt_url_layout)
 
         self.client = deezer.Client()
 
@@ -195,6 +206,40 @@ class TrackSelectionApp(QMainWindow):
             os.remove(mp4_file)
             
         print(f"Converted {len(mp4_files)} .mp4 files to .wav format and deleted the originals.")
+
+
+    def download_url(self):
+        print(self.url_line.text())
+        url = self.url_line.text()
+        if "youtube" in url:
+            temp_folder = os.path.dirname(__file__)
+            youtubeObject = YouTube(url)
+            youtubeObject = youtubeObject.streams.get_highest_resolution()
+            self.url_line.setText(f"Downloading {youtubeObject.title}")
+            print(youtubeObject.title)
+            youtubeObject.download(temp_folder)
+
+            mp4_files = glob.glob(os.path.join(temp_folder, '*.mp4'))
+            print(mp4_files)
+            for mp4_file in mp4_files:
+                wav_file = mp4_file.replace('.mp4', '.wav')
+                video = VideoFileClip(mp4_file)
+                audio = video.audio
+                temp_mp3_path = mp4_file.replace('.mp4', '.mp3')
+                audio.write_audiofile(temp_mp3_path)
+                sound = AudioSegment.from_mp3(temp_mp3_path)
+                sound.export(wav_file, format='wav')
+                audio.close()
+                video.close()
+                
+                os.remove(temp_mp3_path)
+                os.remove(mp4_file)
+                
+            print(f"Converted {len(mp4_files)} .mp4 files to .wav format and deleted the originals.")
+            self.url_line.clear()
+        else:
+            print("Error: Not a Youtube URL.")
+
 
 
 if __name__ == "__main__":
