@@ -10,7 +10,7 @@ import subprocess
 import os
 import librosa
 from pytube import YouTube
-from moviepy.editor import VideoFileClip
+from moviepy import VideoFileClip
 import glob
 from pydub import AudioSegment
 import soundfile as sf
@@ -184,29 +184,30 @@ class TrackSelectionApp(QMainWindow):
             video_ids = re.findall(r"watch\?v=(\S{11})", html.read().decode())
             first_res_html = f"http://www.youtube.com/watch?v={video_ids[0]}"
 
-            youtubeObject = YouTube(first_res_html)
-            youtubeObject = youtubeObject.streams.get_highest_resolution()
-            youtubeObject.download(temp_folder)
-            print(youtubeObject.title)
-
-        mp4_files = glob.glob(os.path.join(temp_folder, '*.mp4'))
-        print(mp4_files)
-        for mp4_file in mp4_files:
-            wav_file = mp4_file.replace('.mp4', '.wav')
-            video = VideoFileClip(mp4_file)
-            audio = video.audio
-            temp_mp3_path = mp4_file.replace('.mp4', '.mp3')
-            audio.write_audiofile(temp_mp3_path)
-            sound = AudioSegment.from_mp3(temp_mp3_path)
-            sound.export(wav_file, format='wav')
-            audio.close()
-            video.close()
-            
-            os.remove(temp_mp3_path)
-            os.remove(mp4_file)
-            
-        print(f"Converted {len(mp4_files)} .mp4 files to .wav format and deleted the originals.")
-
+            """
+                youtubeObject = YouTube(first_res_html)
+                youtubeObject = youtubeObject.streams.get_highest_resolution()
+                youtubeObject.download(temp_folder)
+                print(youtubeObject.title)
+            mp4_files = glob.glob(os.path.join(temp_folder, '*.mp4'))
+            print(mp4_files)
+            for mp4_file in mp4_files:
+                wav_file = mp4_file.replace('.mp4', '.wav')
+                video = VideoFileClip(mp4_file)
+                audio = video.audio
+                temp_mp3_path = mp4_file.replace('.mp4', '.mp3')
+                audio.write_audiofile(temp_mp3_path)
+                sound = AudioSegment.from_mp3(temp_mp3_path)
+                sound.export(wav_file, format='wav')
+                audio.close()
+                video.close()
+                
+                os.remove(temp_mp3_path)
+                os.remove(mp4_file)
+                
+            print(f"Converted {len(mp4_files)} .mp4 files to .wav format and deleted the originals.")
+            """
+            self.download_url(first_res_html)
 
     def download_url(self):
         print(self.url_line.text())
